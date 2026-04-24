@@ -16,6 +16,16 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "name": obj.menu_item.name,
             "price": obj.menu_item.price
         }
+    
+class OrderStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=[
+        "accepted",
+        "preparing",
+        "out_for_delivery",
+        "delivered",
+        "cancelled",
+        "rejected",
+    ])
 
 
 class OrderSerializer(serializers.ModelSerializer):

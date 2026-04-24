@@ -4,13 +4,15 @@ from restaurants.models import Restaurant, MenuItem
 
 
 class Order(models.Model):
-    STATUS_CHOICES = (
-        ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
-        ('preparing', 'Preparing'),
-        ('delivered', 'Delivered'),
-        ('cancelled', 'Cancelled'),
-    )
+    STATUS_CHOICES = [
+    ("pending", "Pending"),
+    ("accepted", "Accepted"),
+    ("preparing", "Preparing"),
+    ("out_for_delivery", "Out for delivery"),
+    ("delivered", "Delivered"),
+    ("cancelled", "Cancelled"),
+    ("rejected", "Rejected"),  # not accepted by owner
+]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
