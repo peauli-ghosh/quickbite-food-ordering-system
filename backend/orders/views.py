@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from .models import Order
 from .serializers import OrderSerializer, OrderStatusSerializer
+from users.models import User
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -49,31 +50,41 @@ class OrderViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # ---------- PERMISSIONS ----------
+        # ---------- ROLE-BASED PERMISSIONS ----------
 
-        # Restaurant owner actions
-        if new_status in ["accepted", "rejected", "preparing"]:
+        # OWNER
+        if user.role == "owner":
             if order.restaurant.owner != user:
-                return Response(
-                    {"error": "Only restaurant owner can perform this action"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+                return Response({"error": "Not your restaurant"}, status=403)
 
-        # Delivered (future: rider)
-        if new_status == "delivered":
-            if order.restaurant.owner != user:  # replace later with rider check
-                return Response(
-                    {"error": "Only delivery agent can mark delivered"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+            if new_status not in ["accepted", "rejected", "preparing", "out_for_delivery"]:
+                return Response({"error": "Owner cannot perform this action"}, status=403)
 
-        # Cancel
-        if new_status == "cancelled":
-            if user != order.user and user != order.restaurant.owner:
-                return Response(
-                    {"error": "Not allowed to cancel"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+            # Assign rider automatically when out for delivery
+            if new_status == "out_for_delivery":
+                rider = User.objects.filter(role="rider").first()
+                if not rider:
+                    return Response({"error": "No rider available"}, status=400)
+                order.rider = rider
+
+        # RIDER
+        elif user.role == "rider":
+            if order.rider != user:
+                return Response({"error": "Not your delivery"}, status=403)
+
+            if new_status != "delivered":
+                return Response({"error": "Rider can only mark delivered"}, status=403)
+
+        # CUSTOMER
+        elif user.role == "customer":
+            if order.user != user:
+                return Response({"error": "Not your order"}, status=403)
+
+            if new_status != "cancelled":
+                return Response({"error": "Customer can only cancel"}, status=403)
+
+        else:
+            return Response({"error": "Invalid role"}, status=403)
 
         # ---------- UPDATE ----------
         old_status = order.status

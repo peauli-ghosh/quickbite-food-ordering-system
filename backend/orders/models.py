@@ -14,6 +14,14 @@ class Order(models.Model):
     ("rejected", "Rejected"),  # not accepted by owner
 ]
 
+    rider = models.ForeignKey(
+    User,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='deliveries'
+)
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
